@@ -683,3 +683,141 @@ body::after {
     height: 55px;
   }
 }
+
+/* Navigation */
+.main-nav {
+  display: flex;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  color: #fff;
+}
+
+.nav-btn.active {
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+/* Catalog View */
+.catalog-view {
+  animation: fadeUp 0.8s ease-out;
+}
+
+.catalog-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.catalog-header h2 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.category-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(41, 121, 255, 0.2), transparent);
+  border-color: var(--secondary);
+  color: var(--secondary);
+  box-shadow: 0 4px 15px var(--secondary-glow);
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.product-icon {
+  background: rgba(41, 121, 255, 0.1);
+  color: var(--secondary);
+  padding: 1.5rem;
+  border-radius: 50%;
+  margin-bottom: 0.5rem;
+}
+
+.product-info h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.product-info p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.product-price {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.price-old {
+  color: #ff5252;
+  text-decoration: line-through;
+  font-size: 0.9rem;
+}
+
+.price-new {
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.btn-sm {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  margin-top: auto;
+}
