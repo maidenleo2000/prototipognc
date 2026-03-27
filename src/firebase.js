@@ -3,13 +3,13 @@ import { getAuth } from "firebase/auth";
 
 // Aquí van las credenciales de Firebase para la aplicación
 const firebaseConfig = {
-  apiKey: "AIzaSyDZZf-G8bC9wWT53wIQsL9-I0Vg6XZOesU",
-  authDomain: "prototipognc.firebaseapp.com",
-  projectId: "prototipognc",
-  storageBucket: "prototipognc.firebasestorage.app",
-  messagingSenderId: "1073745870226",
-  appId: "1:1073745870226:web:b6ff7ab128a12a0b48954b",
-  measurementId: "G-81PMSQ0LDV",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASURE_ID,
 };
 
 // Inicializar Firebase
