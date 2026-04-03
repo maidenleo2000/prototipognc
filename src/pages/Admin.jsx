@@ -12,8 +12,17 @@ import {
   Search,
   Image as ImageIcon,
   Edit3,
-  Type
+  Type,
+  Zap,
+  Globe,
+  Palette,
+  ArrowUp,
+  RefreshCcw
 } from "lucide-react";
+
+const SITIO_ICONS = [
+  'fuel', 'zap', 'car', 'wrench', 'coffee', 'shoppingBag', 'navigation', 'wind', 'droplet', 'pizza', 'flame', 'shield', 'heart', 'star', 'home'
+];
 
 const AVAILABLE_ICONS = [
   'coffee', 'wrench', 'fuel', 'car', 'utensils', 'shoppingBag', 
@@ -44,15 +53,21 @@ const Admin = ({
   handleUpdateUserPoints, 
   handleDeleteUser,
   handleAddUser,
+  handleUpdateUser,
   initWeeklyPromos,
   appSettings,
   updateAppSettings,
   uploadImage,
-  getIcon
+  getIcon,
+  userProfile,
+  redemptionsState,
+  handleCompleteRedeem
 }) => {
+  const profileName = userProfile?.name || userProfile?.displayName || userProfile?.email?.split('@')[0] || 'Usuario';
   const [pointsStep, setPointsStep] = useState(10);
   const [userSearch, setUserSearch] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   
   const [foodIcon, setFoodIcon] = useState('coffee');
   const [autoIcon, setAutoIcon] = useState('wrench');
@@ -61,11 +76,16 @@ const Admin = ({
   const [productSubTab, setProductSubTab] = useState('food');
   // Separar usuarios por roles para una mejor organización
   const admins = allUsers.filter(u => u.role === 'admin');
-  const clients = allUsers.filter(u => u.role !== 'admin').filter(u => 
-    u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
-    u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.displayName?.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  const clients = allUsers.filter(u => u.role !== 'admin').filter(u => {
+    const searchLow = userSearch.toLowerCase();
+    const nameLow = (u.name || "").toLowerCase();
+    const emailLow = (u.email || "").toLowerCase();
+    const displayNameLow = (u.displayName || "").toLowerCase();
+    
+    return nameLow.includes(searchLow) || 
+           emailLow.includes(searchLow) || 
+           displayNameLow.includes(searchLow);
+  });
 
   if (!isAdmin) {
     return (
@@ -76,7 +96,7 @@ const Admin = ({
         </div>
         <div className="card-glass profile-info-card" style={{ padding: '2rem', textAlign: 'center' }}>
           <Users size={48} color="var(--primary)" style={{ marginBottom: '1rem' }} />
-          <h3>Bienvenido al Panel de Usuario</h3>
+          <h3>Bienvenido, {profileName}</h3>
           <p>Como cliente regular, podés ver las promociones vigentes en el catálogo.</p>
           <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
             Nivel: <strong>Cliente GNC</strong>
@@ -153,6 +173,18 @@ const Admin = ({
     e.target.reset();
   };
 
+  const onUpdateUserSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    await handleUpdateUser(editingUser.uid, {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      points: Number(formData.get("points")),
+      role: formData.get("role"),
+    });
+    setEditingUser(null);
+  };
+
   return (
     <div className="admin-view">
       <div className="catalog-header">
@@ -170,8 +202,14 @@ const Admin = ({
         <button className={`tab-btn ${adminTab === 'rewards' ? 'active' : ''}`} onClick={() => setAdminTab('rewards')}>
           <Gift size={20} /> Premios
         </button>
+        <button className={`tab-btn ${adminTab === 'redemptions' ? 'active' : ''}`} onClick={() => setAdminTab('redemptions')}>
+          <Zap size={20} /> Canjes
+        </button>
         <button className={`tab-btn ${adminTab === 'users' ? 'active' : ''}`} onClick={() => setAdminTab('users')}>
           <Users size={20} /> Usuarios
+        </button>
+        <button className={`tab-btn ${adminTab === 'site' ? 'active' : ''}`} onClick={() => setAdminTab('site')}>
+          <Globe size={20} /> Sitio
         </button>
       </div>
 
@@ -440,24 +478,6 @@ const Admin = ({
             </form>
           </div>
 
-          {/* Configuración Global de Puntos */}
-          <div className="card-glass points-config-card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Settings className="section-icon" size={24} />
-              <div>
-                <h4 style={{ margin: 0 }}>Incremento de Puntos</h4>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Configurá cuántos puntos se suman/restan por click</p>
-              </div>
-            </div>
-            <div className="admin-price-controls">
-              <input 
-                type="number" 
-                value={pointsStep} 
-                onChange={(e) => setPointsStep(Number(e.target.value))} 
-                style={{ width: '100px', textAlign: 'center', fontSize: '1.2rem', color: 'var(--primary)' }}
-              />
-            </div>
-          </div>
 
           <div className="admin-section">
             <h3>Administradores</h3>
@@ -484,7 +504,7 @@ const Admin = ({
           <div className="admin-section" style={{ marginTop: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <h3>Clientes y Usuarios</h3>
-              <div className="search-bar" style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '300px' }}>
+              <div className="search-bar" style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', maxWidth: '300px' }}>
                 <Search size={18} style={{ position: 'absolute', left: '1rem', color: 'var(--text-muted)' }} />
                 <input 
                   type="text" 
@@ -496,52 +516,223 @@ const Admin = ({
                 />
               </div>
             </div>
-            <div className="card-glass users-table-container">
-              <table className="admin-table">
-                <thead><tr><th>Email / Nombre</th><th style={{ textAlign: 'center' }}>Puntos</th><th style={{ textAlign: 'flex-end' }}>Acciones</th></tr></thead>
-                <tbody>
-                  {clients.map((u) => (
-                    <tr key={u.uid}>
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: '600' }}>{u.name || u.displayName || 'Sin nombre'}</span>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{u.email}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="points-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+
+            {/* Configuración Global de Puntos Relocalizada */}
+            <div className="card-glass points-config-card" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Settings className="section-icon" size={20} />
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1rem' }}>Incremento por Click</h4>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Configurá cuánto suma/resta el + y -</p>
+                </div>
+              </div>
+              <div className="admin-price-controls">
+                <input 
+                  type="number" 
+                  value={pointsStep} 
+                  onChange={(e) => setPointsStep(Number(e.target.value))} 
+                  style={{ width: '80px', textAlign: 'center', fontSize: '1.1rem', color: 'var(--primary)', padding: '0.4rem' }}
+                />
+              </div>
+            </div>
+
+            <div className="admin-users-grid-container">
+               {clients.map((u) => (
+                 <div key={u.uid} className="card-glass user-profile-row">
+                    <div className="user-primary-info">
+                       <div className="user-avatar-small">{getIcon('users', 18)}</div>
+                       <div className="name-email">
+                          <strong>{u.name || u.displayName || 'Sin nombre'}</strong>
+                          <span>{u.email}</span>
+                       </div>
+                    </div>
+
+                    <div className="user-score-section">
+                       <div className="points-controls">
                           <button 
                             className="btn-icon btn-minus-active" 
                             onClick={() => handleUpdateUserPoints(u.uid, Math.max(0, (u.points || 0) - pointsStep))}
-                            title={`Restar ${pointsStep} puntos`}
                           >
                             <Minus size={14} />
                           </button>
-                          <span className="points-display" style={{ minWidth: '50px', textAlign: 'center', fontWeight: '800', fontSize: '1.1rem', color: 'var(--primary)' }}>
-                            {u.points || 0}
+                          <span className="points-display">
+                            {u.points || 0} <small>pts</small>
                           </span>
                           <button 
                             className="btn-icon btn-plus-active" 
                             onClick={() => handleUpdateUserPoints(u.uid, (u.points || 0) + pointsStep)}
-                            title={`Sumar ${pointsStep} puntos`}
                           >
                             <Plus size={14} />
                           </button>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button className="btn-icon btn-danger" onClick={() => handleDeleteUser(u.uid)}><Trash2 size={16} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                       </div>
+                    </div>
+
+                    <div className="user-row-actions">
+                       <button className="btn-icon" onClick={() => setEditingUser(u)} title="Editar"><Edit3 size={16} /></button>
+                       <button className="btn-icon btn-danger" onClick={() => handleDeleteUser(u.uid)} title="Eliminar"><Trash2 size={16} /></button>
+                    </div>
+                 </div>
+               ))}
+               {clients.length === 0 && <p className="empty-msg">No se encontraron usuarios.</p>}
             </div>
           </div>
         </div>
       )}
+      {adminTab === 'redemptions' && (
+        <div className="admin-section">
+          <h3>Canjes Pendientes</h3>
+          <p className="section-subtitle">Aprobá las solicitudes de premios de los clientes.</p>
+          <div className="admin-users-grid-container" style={{ marginTop: '1.5rem' }}>
+            {redemptionsState?.filter(r => r.status === 'pending').map((r) => {
+              const u = allUsers.find(user => user.uid === r.userId);
+              return (
+                <div key={r.id} className="card-glass user-profile-row" style={{ borderLeft: '4px solid #2979ff' }}>
+                  <div className="user-primary-info">
+                    <div className="user-avatar-small"><Gift size={20} /></div>
+                    <div className="name-email">
+                      <strong>{r.rewardTitle}</strong>
+                      <span>Cliente: {u?.name || u?.email || 'Usuario Desconocido'}</span>
+                    </div>
+                  </div>
+                  <div className="user-score-section">
+                    <span className="points-display" style={{ fontSize: '1rem', color: '#888' }}>
+                      -{r.pointsDeducted} pts
+                    </span>
+                  </div>
+                  <div className="user-row-actions">
+                    <button className="btn-primary" onClick={() => handleCompleteRedeem(r.id)} style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}>
+                      Completar
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {redemptionsState?.filter(r => r.status === 'pending').length === 0 && (
+              <div className="card-glass" style={{ textAlign: 'center', padding: '3rem' }}>
+                <p className="empty-msg">No hay solicitudes de canje pendientes en este momento.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {adminTab === 'site' && (
+        <div className="admin-section fade-in">
+          <div className="section-header-admin">
+            <h3>Personalización del Sitio</h3>
+            <p>Ajustá la identidad visual y funcionalidades globales.</p>
+          </div>
+
+          <div className="card-glass" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Nombre e Icono */}
+            <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              <div className="setting-group">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Nombre del Sitio</label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <input 
+                    className="admin-input" 
+                    value={appSettings.siteName || 'EkoGNC'} 
+                    onChange={(e) => updateAppSettings({ siteName: e.target.value })}
+                    placeholder="Nombre que aparece arriba"
+                  />
+                  <button className="btn-icon" onClick={() => updateAppSettings({ siteName: 'EkoGNC', siteIcon: 'fuel' })} title="Restablecer Nombre e Icono">
+                    <RefreshCcw size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="setting-group">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Icono del Sitio</label>
+                <div className="icon-selector-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
+                  {SITIO_ICONS.map(icon => (
+                    <button 
+                      key={icon} 
+                      type="button" 
+                      className={`icon-option ${appSettings.siteIcon === icon ? 'active' : ''}`}
+                      onClick={() => updateAppSettings({ siteIcon: icon })}
+                    >
+                      {getIcon(icon, 20)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1rem 0' }} />
+
+            {/* Colores y Mas */}
+            <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              <div className="setting-group">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Color Principal (Tema)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <input 
+                    type="color" 
+                    value={appSettings.primaryColor || '#00e676'} 
+                    onChange={(e) => updateAppSettings({ primaryColor: e.target.value })}
+                    style={{ border: 'none', width: '60px', height: '40px', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
+                  />
+                  <span style={{ fontFamily: 'monospace' }}>{appSettings.primaryColor || '#00e676'}</span>
+                  <button 
+                    className="btn-add" 
+                    style={{ background: '#00e676', border: 'none' }}
+                    onClick={() => updateAppSettings({ primaryColor: '#00e676' })}
+                  >
+                    Restablecer
+                  </button>
+                </div>
+              </div>
+
+              <div className="setting-group">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Funcionalidades</label>
+                <div className="card-glass" style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <ArrowUp size={20} color="var(--primary)" />
+                    <span>Botón "Volver Arriba"</span>
+                  </div>
+                  <label className="switch">
+                    <input 
+                      type="checkbox" 
+                      checked={appSettings.showScrollTop} 
+                      onChange={(e) => updateAppSettings({ showScrollTop: e.target.checked })}
+                    />
+                    <span className="slider round"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN DE USUARIO */}
+      <div className={`modal-overlay ${editingUser ? 'active' : ''}`}>
+        <div className="modal-content card-glass">
+            <h3>Editar Usuario</h3>
+            <p className="modal-text">Modificá los datos del perfil seleccionado.</p>
+            {editingUser && (
+              <form onSubmit={onUpdateUserSubmit} className="login-form">
+                <div className="input-group">
+                  <input name="name" className="input-field" defaultValue={editingUser.name || editingUser.displayName} placeholder="Nombre" required />
+                </div>
+                <div className="input-group">
+                  <input name="email" className="input-field" defaultValue={editingUser.email} placeholder="Email" required />
+                </div>
+                <div className="input-group">
+                   <input name="points" className="input-field" type="number" defaultValue={editingUser.points || 0} placeholder="Puntos" required />
+                </div>
+                <div className="input-group">
+                  <select name="role" defaultValue={editingUser.role || 'client'} className="input-field">
+                    <option value="client">Cliente</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }}>Guardar</button>
+                  <button type="button" className="btn-close" onClick={() => setEditingUser(null)} style={{ flex: 1 }}>Cerrar</button>
+                </div>
+              </form>
+            )}
+        </div>
+      </div>
     </div>
   );
 };

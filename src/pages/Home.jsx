@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Gift, Zap } from "lucide-react";
+import { Calendar, Gift, Zap, Fuel } from "lucide-react";
 
 /**
  * Página principal (Dashboard) para clientes.
@@ -12,8 +12,12 @@ const Home = ({
   promosData, 
   weekDays, 
   rewardsCatalogue, 
-  handleRedeem 
+  handleRedeem,
+  redemptionsState,
+  userProfile
 }) => {
+  const pendingRedemption = redemptionsState?.find(r => r.userId === userProfile?.uid && r.status === 'pending');
+
   return (
     <>
       <section className="hero">
@@ -68,6 +72,11 @@ const Home = ({
           {/* Mostrar balance solo si no es admin */}
           {!isAdmin && (
             <div className="rewards-balance">
+              {pendingRedemption && (
+                <div className="status-alert gestionando">
+                  <Zap size={16} className="spinning" /> Gestión de puntos en proceso...
+                </div>
+              )}
               <div className="balance-amount">
                 {points} <Zap size={40} color="#00e676" />
               </div>

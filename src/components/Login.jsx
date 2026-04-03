@@ -23,8 +23,12 @@ const Login = ({ loginForm, setLoginForm, handleLogin, loginError }) => {
           {/* Grupo de Email */}
           <div className="input-group">
             <UserIcon className="input-icon" size={20} />
+            <label htmlFor="email" style={{ display: 'none' }}>Email</label>
             <input
               type="email"
+              id="email"
+              name="email"
+              autoComplete="email"
               placeholder="Correo Electrónico"
               className="input-field"
               value={loginForm.email}
@@ -36,8 +40,12 @@ const Login = ({ loginForm, setLoginForm, handleLogin, loginError }) => {
           {/* Grupo de Contraseña */}
           <div className="input-group">
             <Lock className="input-icon" size={20} />
+            <label htmlFor="password" style={{ display: 'none' }}>Contraseña</label>
             <input
               type="password"
+              id="password"
+              name="password"
+              autoComplete="current-password"
               placeholder="Contraseña"
               className="input-field"
               value={loginForm.password}

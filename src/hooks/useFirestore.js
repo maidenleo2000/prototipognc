@@ -21,9 +21,14 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
   const [promosState, setPromosState] = useState([]);
   const [rewardsState, setRewardsState] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [redemptionsState, setRedemptionsState] = useState([]);
   const [appSettings, setAppSettings] = useState({
     foodCategoryName: 'Comida y Tienda',
-    autoCategoryName: 'Automotor'
+    autoCategoryName: 'Automotor',
+    siteName: 'EkoGNC',
+    siteIcon: 'fuel',
+    primaryColor: '#00e676',
+    showScrollTop: true
   });
 
   useEffect(() => {
@@ -76,6 +81,11 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
       );
     }
 
+    // Escucha en tiempo real para canjes (redemptions)
+    const unsubRedemptions = onSnapshot(collection(db, "redemptions"), (snapshot) => {
+      setRedemptionsState(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     return () => {
       unsubFood();
       unsubAuto();
@@ -83,6 +93,7 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
       unsubRewards();
       unsubUsers();
       unsubSettings();
+      unsubRedemptions();
     };
   }, [isAuthenticated, isAdmin]);
 
@@ -172,6 +183,14 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
   };
 
   /**
+   * Actualizar perfil de usuario existente.
+   */
+  const handleUpdateUser = async (uid, data) => {
+    const docRef = doc(db, "users", uid);
+    await updateDoc(docRef, data);
+  };
+
+  /**
    * Actualizar ajustes globales.
    */
   const updateAppSettings = async (newSettings) => {
@@ -229,6 +248,44 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
     }
   };
 
+  /**
+   * CANJES: Solicitar y Completar.
+   */
+  const handleRequestRedeem = async (userId, userPoints, reward) => {
+    try {
+      const batch = writeBatch(db);
+      
+      // 1. Descontar puntos al usuario
+      const userRef = doc(db, "users", userId);
+      batch.update(userRef, { points: userPoints - reward.points });
+
+      // 2. Crear solicitud de canje
+      const redemptionRef = doc(collection(db, "redemptions"));
+      batch.set(redemptionRef, {
+        userId,
+        rewardId: reward.id,
+        rewardTitle: reward.title,
+        pointsDeducted: reward.points,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error("Error al solicitar canje:", error);
+      throw error;
+    }
+  };
+
+  const handleCompleteRedeem = async (redemptionId) => {
+    try {
+      const redemptionRef = doc(db, "redemptions", redemptionId);
+      await updateDoc(redemptionRef, { status: 'completed' });
+    } catch (error) {
+      console.error("Error al completar canje:", error);
+    }
+  };
+
   return {
     foodProductsState,
     autoProductsState,
@@ -245,10 +302,14 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
     handleUpdateUserPoints,
     handleDeleteUser,
     handleAddUser,
+    handleUpdateUser,
     updateAppSettings,
     uploadImage,
     initWeeklyPromos,
     handleAddPromo,
-    handleDeletePromo
+    handleDeletePromo,
+    redemptionsState,
+    handleRequestRedeem,
+    handleCompleteRedeem
   };
 };

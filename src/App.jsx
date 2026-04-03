@@ -18,7 +18,16 @@ import {
   Sandwich,
   Cookie,
   Smartphone,
-  Gift
+  Gift,
+  Flame,
+  Shield,
+  Heart,
+  Star,
+  Home as HomeIcon,
+  RefreshCcw,
+  Globe,
+  Palette,
+  ArrowUp
 } from "lucide-react";
 import { auth } from "./services/firebase";
 
@@ -41,7 +50,7 @@ const weekDays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes
 function App() {
   
   // --- Estados de Autenticación y Datos de Firestore (Vía Hooks) ---
-  const { isAuthenticated, isAdmin, points, loading } = useAuth();
+  const { isAuthenticated, isAdmin, userProfile, points, loading } = useAuth();
   const { 
     foodProductsState, 
     autoProductsState, 
@@ -58,11 +67,15 @@ function App() {
     handleUpdateUserPoints, 
     handleDeleteUser,
     handleAddUser,
+    handleUpdateUser,
     initWeeklyPromos,
     handleAddPromo,
     handleDeletePromo,
     updateAppSettings,
-    uploadImage
+    uploadImage,
+    redemptionsState,
+    handleRequestRedeem,
+    handleCompleteRedeem
   } = useFirestore(isAuthenticated, isAdmin);
 
   // --- Estados de Control Local (Navegación e Interfaz) ---
@@ -74,6 +87,29 @@ function App() {
   const [modalData, setModalData] = useState({ show: false, title: "", message: "" });
 
   const currentDay = new Date().getDay();
+
+  // --- Efecto para aplicar tema de color dinámico ---
+  React.useEffect(() => {
+    if (appSettings?.primaryColor) {
+      document.documentElement.style.setProperty('--primary', appSettings.primaryColor);
+      // Generar un glow suave basado en el color primario (vía hex a rgba aprox)
+      document.documentElement.style.setProperty('--primary-glow', `${appSettings.primaryColor}4D`); // 4D es 30% alpha
+    }
+  }, [appSettings?.primaryColor]);
+
+  // --- Manejo del botón Volver Arriba ---
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollBtn(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // --- Lógica de Manejo de Sesión ---
   const handleLogin = async (e) => {
@@ -98,12 +134,30 @@ function App() {
   };
 
   // --- Lógica de Negocio Adaptada a Componentes ---
-  const handleRedeem = (reward) => {
-    setModalData({
-      show: true,
-      title: "Recompensa Procesada",
-      message: `Has solicitado el beneficio: ${reward.title}.`
-    });
+  const handleRedeem = async (reward) => {
+    if ((points || 0) < reward.points) {
+      setModalData({
+        show: true,
+        title: "Puntos Insuficientes",
+        message: `Necesitás ${reward.points} puntos para ${reward.title}.`
+      });
+      return;
+    }
+
+    try {
+      await handleRequestRedeem(userProfile.uid, points, reward);
+      setModalData({
+        show: true,
+        title: "Puntos en Gestión",
+        message: `¡Canje solicitado! Descontamos ${reward.points} puntos. Presentate en caja para retirar tu premio.`
+      });
+    } catch (error) {
+      setModalData({
+        show: true,
+        title: "Error",
+        message: "No se pudo procesar el canje."
+      });
+    }
   };
 
   const getIcon = (type, size = 32) => {
@@ -125,7 +179,12 @@ function App() {
       sandwich: <Sandwich size={size} />,
       cookie: <Cookie size={size} />,
       smartphone: <Smartphone size={size} />,
-      gift: <Gift size={size} />
+      gift: <Gift size={size} />,
+      flame: <Flame size={size} />,
+      shield: <Shield size={size} />,
+      heart: <Heart size={size} />,
+      star: <Star size={size} />,
+      home: <HomeIcon size={size} />,
     };
     return icons[type] || <ShoppingBag size={size} />;
   };
@@ -156,7 +215,10 @@ function App() {
         setCurrentView={setCurrentView} 
         isAdmin={isAdmin}
         points={points} 
+        userProfile={userProfile}
         handleLogout={handleLogout}
+        appSettings={appSettings}
+        getIcon={getIcon}
       />
 
       <main className="main-content">
@@ -170,6 +232,8 @@ function App() {
             rewardsCatalogue={rewardsState}
             handleRedeem={handleRedeem}
             appSettings={appSettings}
+            redemptionsState={redemptionsState}
+            userProfile={userProfile}
           />
         )}
 
@@ -204,12 +268,16 @@ function App() {
             handleUpdateUserPoints={handleUpdateUserPoints}
             handleDeleteUser={handleDeleteUser}
             handleAddUser={handleAddUser}
+            handleUpdateUser={handleUpdateUser}
             initWeeklyPromos={initWeeklyPromos}
             handleAddPromo={handleAddPromo}
             handleDeletePromo={handleDeletePromo}
             updateAppSettings={updateAppSettings}
             uploadImage={uploadImage}
             getIcon={getIcon}
+            userProfile={userProfile}
+            redemptionsState={redemptionsState}
+            handleCompleteRedeem={handleCompleteRedeem}
           />
         )}
       </main>
@@ -220,6 +288,17 @@ function App() {
         message={modalData.message} 
         onClose={() => setModalData({ ...modalData, show: false })}
       />
+
+      {/* Botón Volver Arriba Dinámico */}
+      {appSettings?.showScrollTop && showScrollBtn && (
+        <button 
+          className="scroll-to-top" 
+          onClick={scrollToTop}
+          title="Volver arriba"
+        >
+          <ArrowUp size={28} color="white" strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 }
