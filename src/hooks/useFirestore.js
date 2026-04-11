@@ -28,7 +28,10 @@ export const useFirestore = (isAuthenticated, isAdmin) => {
     siteName: 'EkoGNC',
     siteIcon: 'fuel',
     primaryColor: '#00e676',
-    showScrollTop: true
+    showScrollTop: true,
+    heroTitleNormal: 'Energía que ',
+    heroTitleHighlight: 'Te Premia',
+    heroSubtitle: 'Ahorrá y acumulá puntos en cada carga de GNC. Canjeá tus puntos por descuentos exclusivos y beneficios en nuestra red de estaciones.'
   });
 
   useEffect(() => {

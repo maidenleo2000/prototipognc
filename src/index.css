@@ -1546,32 +1546,43 @@ body::after {
 
 /* Admin Users Redesign - Premium Feel */
 .admin-users-grid-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.5rem;
   margin-top: 1rem;
 }
 
+@media (max-width: 450px) {
+  .admin-users-grid-container {
+    grid-template-columns: 1fr;
+  }
+}
+
 .user-profile-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 2rem;
-  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 
+    "info actions"
+    "score score";
+  gap: 1.5rem;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid var(--border);
 }
 
 .user-profile-row:hover {
-  border-color: var(--primary-glow);
-  background: rgba(255, 255, 255, 0.03);
-  transform: translateX(8px);
+  border-color: var(--primary);
+  background: var(--bg-card-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .user-primary-info {
+  grid-area: info;
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  flex: 2;
+  min-width: 0;
 }
 
 .user-avatar-small {
@@ -1584,36 +1595,44 @@ body::after {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .name-email {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0; /* Allow truncation */
 }
 
 .name-email strong {
   font-size: 1.1rem;
   color: #fff;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .name-email span {
   font-size: 0.85rem;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-score-section {
-  flex: 1.5;
+  grid-area: score;
   display: flex;
   justify-content: center;
 }
 
 .user-row-actions {
+  grid-area: actions;
   display: flex;
   gap: 0.75rem;
-  flex: 1;
-  justify-content: flex-end;
+  align-items: flex-start;
 }
 
 .points-display small {

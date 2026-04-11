@@ -14,7 +14,8 @@ const Home = ({
   rewardsCatalogue, 
   handleRedeem,
   redemptionsState,
-  userProfile
+  userProfile,
+  appSettings
 }) => {
   const pendingRedemption = redemptionsState?.find(r => r.userId === userProfile?.uid && r.status === 'pending');
 
@@ -22,11 +23,11 @@ const Home = ({
     <>
       <section className="hero">
         <h1>
-          Energía que <span className="highlight">Te Premia</span>
+          {appSettings?.heroTitleNormal || 'Energía que '}
+          <span className="highlight">{appSettings?.heroTitleHighlight || 'Te Premia'}</span>
         </h1>
         <p>
-          Ahorrá y acumulá puntos en cada carga de GNC. Canjeá tus puntos por
-          descuentos exclusivos y beneficios en nuestra red de estaciones.
+          {appSettings?.heroSubtitle || 'Ahorrá y acumulá puntos en cada carga de GNC. Canjeá tus puntos por descuentos exclusivos y beneficios en nuestra red de estaciones.'}
         </p>
       </section>
 
@@ -51,8 +52,8 @@ const Home = ({
                     </div>
                     <div className="promo-value">
                       {promo.discount > 0 
-                        ? `${promo.discount}${promo.unit === '% Off' ? '%' : ' ' + promo.unit}` 
-                        : promo.unit}
+                        ? `${promo.discount}${(!promo.unit || promo.unit === '% Off' || promo.unit === '% OFF') ? '%' : ' ' + promo.unit}` 
+                        : (promo.unit || '')}
                     </div>
                   </div>
                 );

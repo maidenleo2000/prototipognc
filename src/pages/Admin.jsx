@@ -17,7 +17,10 @@ import {
   Globe,
   Palette,
   ArrowUp,
-  RefreshCcw
+  RefreshCcw,
+  Shield,
+  KeyRound,
+  MailCheck
 } from "lucide-react";
 
 const SITIO_ICONS = [
@@ -61,9 +64,12 @@ const Admin = ({
   getIcon,
   userProfile,
   redemptionsState,
-  handleCompleteRedeem
+  handleCompleteRedeem,
+  handleResetPassword
 }) => {
   const profileName = userProfile?.name || userProfile?.displayName || userProfile?.email?.split('@')[0] || 'Usuario';
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [pointsStep, setPointsStep] = useState(10);
   const [userSearch, setUserSearch] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -94,13 +100,44 @@ const Admin = ({
           <h2>Mi <span className="highlight">Perfil</span></h2>
           <p>Consultá tu estado y nivel en la estación.</p>
         </div>
-        <div className="card-glass profile-info-card" style={{ padding: '2rem', textAlign: 'center' }}>
-          <Users size={48} color="var(--primary)" style={{ marginBottom: '1rem' }} />
-          <h3>Bienvenido, {profileName}</h3>
-          <p>Como cliente regular, podés ver las promociones vigentes en el catálogo.</p>
-          <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
-            Nivel: <strong>Cliente GNC</strong>
-          </p>
+        <div className="card-glass profile-info-card" style={{ padding: '3rem', textAlign: 'center', maxWidth: '500px', margin: '0 auto' }}>
+          <div className="user-avatar-large" style={{ margin: '0 auto 1.5rem', width: '80px', height: '80px', borderRadius: '50%', background: 'var(--bg-card)', border: '3px solid var(--primary)', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: 'var(--primary)' }}>
+            <Users size={40} style={{ margin: '0 auto' }} />
+          </div>
+          <h3 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Hola, {profileName}</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Estatus de cuenta: <strong style={{ color: 'var(--primary)' }}>Cliente Premium</strong></p>
+          
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem', marginTop: '1rem' }}>
+            <h4 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Seguridad de la cuenta</h4>
+            {!resetSent ? (
+              <button 
+                className="btn-primary" 
+                onClick={async () => {
+                  setResetLoading(true);
+                  try {
+                    await handleResetPassword();
+                    setResetSent(true);
+                  } catch (e) {
+                    alert("Error al enviar el correo. Reintente luego.");
+                  } finally {
+                    setResetLoading(false);
+                  }
+                }}
+                disabled={resetLoading}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: '#fff' }}
+              >
+                {resetLoading ? 'Enviando...' : <><KeyRound size={18} /> Cambiar mi Contraseña</>}
+              </button>
+            ) : (
+              <div className="fade-in" style={{ background: 'rgba(0, 230, 118, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--primary)', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
+                <MailCheck size={20} color="var(--primary)" />
+                <span style={{ fontSize: '0.9rem' }}>Correo enviado. Revisá tu bandeja de entrada.</span>
+              </div>
+            )}
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+              Te enviaremos un link seguro a <strong>{userProfile?.email}</strong> para restablecer tu clave.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -210,6 +247,9 @@ const Admin = ({
         </button>
         <button className={`tab-btn ${adminTab === 'site' ? 'active' : ''}`} onClick={() => setAdminTab('site')}>
           <Globe size={20} /> Sitio
+        </button>
+        <button className={`tab-btn ${adminTab === 'profile' ? 'active' : ''}`} onClick={() => setAdminTab('profile')}>
+          <Shield size={20} /> Mi Cuenta
         </button>
       </div>
 
@@ -463,48 +503,72 @@ const Admin = ({
         <div className="admin-users-list">
           {/* Formulario Nuevo Usuario */}
           <div className="admin-section">
-            <h3>Nuevo Usuario</h3>
-            <form className="card-glass add-form" onSubmit={onAddUserSubmit} style={{ marginBottom: '2rem' }}>
-              <input name="name" placeholder="Nombre completo" required />
-              <input name="email" type="email" placeholder="Email del usuario" required />
-              <div className="price-inputs">
-                <input name="points" type="number" placeholder="Puntos Iniciales" defaultValue={0} required />
-                <select name="role" style={{ background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.5rem' }}>
-                  <option value="client">Cliente</option>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Plus size={22} color="var(--primary)" /> Nuevo Usuario
+            </h3>
+            <form className="card-glass add-form" onSubmit={onAddUserSubmit} style={{ 
+              marginBottom: '2rem', 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+              gap: '1.5rem',
+              padding: '2rem'
+            }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Nombre Completo</label>
+                <input name="name" className="admin-input" placeholder="Ej: Juan Pérez" required />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Correo Electrónico</label>
+                <input name="email" type="email" className="admin-input" placeholder="email@ejemplo.com" required />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Puntos Iniciales</label>
+                <input name="points" type="number" className="admin-input" placeholder="0" defaultValue={0} required />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Rol de Usuario</label>
+                <select name="role" className="admin-input" style={{ width: '100%' }}>
+                  <option value="client">Cliente Standard</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
-              <button type="submit" className="btn-add"><Plus size={18} /> Crear Usuario</button>
+              <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
+                <button type="submit" className="btn-primary" style={{ margin: 0, padding: '0.8rem' }}>
+                  <Plus size={20} /> Crear Usuario en Sistema
+                </button>
+              </div>
             </form>
           </div>
 
 
           <div className="admin-section">
             <h3>Administradores</h3>
-            <div className="card-glass users-table-container">
-              <table className="admin-table">
-                <thead><tr><th>Email</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  {admins.map((u) => (
-                    <tr key={u.uid}>
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: '600' }}>{u.displayName || u.name || 'Admin'}</span>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{u.email}</span>
-                        </div>
-                      </td>
-                      <td><button className="btn-icon btn-danger" onClick={() => handleDeleteUser(u.uid)}><Trash2 size={16} /></button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="admin-users-grid-container" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+              {admins.map((u) => (
+                <div key={u.uid} className="card-glass user-profile-row" style={{ padding: '1rem 1.5rem' }}>
+                  <div className="user-primary-info">
+                    <div className="user-avatar-small" style={{ borderColor: 'var(--secondary)' }}>
+                      <Shield size={20} color="var(--secondary)" />
+                    </div>
+                    <div className="name-email">
+                      <strong>{u.displayName || u.name || 'Admin'}</strong>
+                      <span style={{ fontSize: '0.8rem' }}>{u.email}</span>
+                    </div>
+                  </div>
+                  <div className="user-row-actions">
+                    <button className="del-btn" onClick={() => handleDeleteUser(u.uid)} style={{ width: '32px', height: '32px' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="admin-section" style={{ marginTop: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '1rem' }}>
               <h3>Clientes y Usuarios</h3>
-              <div className="search-bar" style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', maxWidth: '300px' }}>
+              <div className="search-bar" style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', maxWidth: '400px' }}>
                 <Search size={18} style={{ position: 'absolute', left: '1rem', color: 'var(--text-muted)' }} />
                 <input 
                   type="text" 
@@ -518,21 +582,38 @@ const Admin = ({
             </div>
 
             {/* Configuración Global de Puntos Relocalizada */}
-            <div className="card-glass points-config-card" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <Settings className="section-icon" size={20} />
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1rem' }}>Incremento por Click</h4>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Configurá cuánto suma/resta el + y -</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '2rem' }}>
+              <div className="card-glass points-config-card" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '2rem', 
+                padding: '1rem 2rem',
+                border: '1px solid var(--secondary)',
+                background: 'rgba(41, 121, 255, 0.05)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <Settings className="section-icon" size={24} color="var(--secondary)" />
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.9rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Incremento +/-</h4>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Puntos por click</p>
+                  </div>
                 </div>
-              </div>
-              <div className="admin-price-controls">
-                <input 
-                  type="number" 
-                  value={pointsStep} 
-                  onChange={(e) => setPointsStep(Number(e.target.value))} 
-                  style={{ width: '80px', textAlign: 'center', fontSize: '1.1rem', color: 'var(--primary)', padding: '0.4rem' }}
-                />
+                <div className="admin-price-controls">
+                  <input 
+                    type="number" 
+                    value={pointsStep} 
+                    onChange={(e) => setPointsStep(Number(e.target.value))} 
+                    style={{ 
+                      width: '90px', 
+                      textAlign: 'center', 
+                      fontSize: '1.2rem', 
+                      color: 'var(--secondary)', 
+                      padding: '0.5rem',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: '1px solid var(--secondary)'
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -617,9 +698,9 @@ const Admin = ({
       )}
       {adminTab === 'site' && (
         <div className="admin-section fade-in">
-          <div className="section-header-admin">
+          <div className="section-header-admin" style={{ marginBottom: '2rem' }}>
             <h3>Personalización del Sitio</h3>
-            <p>Ajustá la identidad visual y funcionalidades globales.</p>
+            <p style={{ color: 'var(--text-muted)', marginTop: '-0.5rem' }}>Ajustá la identidad visual y funcionalidades globales.</p>
           </div>
 
           <div className="card-glass" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -699,7 +780,96 @@ const Admin = ({
                 </div>
               </div>
             </div>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1rem 0' }} />
+
+            {/* Textos Principales */}
+            <h4 style={{ margin: '0 0 1rem 0', fontWeight: 'bold' }}>Textos de Inicio (Hero)</h4>
+            <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              <div className="setting-group">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Título Normal</label>
+                <input 
+                  className="admin-input" 
+                  value={appSettings.heroTitleNormal || 'Energía que '} 
+                  onChange={(e) => updateAppSettings({ heroTitleNormal: e.target.value })}
+                  placeholder="Ej: Energía que "
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className="setting-group">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Título Resaltado</label>
+                <input 
+                  className="admin-input" 
+                  value={appSettings.heroTitleHighlight || 'Te Premia'} 
+                  onChange={(e) => updateAppSettings({ heroTitleHighlight: e.target.value })}
+                  placeholder="Ej: Te Premia"
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className="setting-group" style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Subtítulo</label>
+                <textarea 
+                  className="admin-input" 
+                  value={appSettings.heroSubtitle || 'Ahorrá y acumulá puntos en cada carga de GNC. Canjeá tus puntos por descuentos exclusivos y beneficios en nuestra red de estaciones.'} 
+                  onChange={(e) => updateAppSettings({ heroSubtitle: e.target.value })}
+                  placeholder="Ej: Ahorrá y acumulá puntos..."
+                  style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
           </div>
+        </div>
+      )}
+
+      {/* --- MI CUENTA (ADMIN) --- */}
+      {adminTab === 'profile' && (
+        <div className="admin-section fade-in">
+           <div className="section-header-admin" style={{ marginBottom: '2rem' }}>
+              <h3>Gestión de mi Cuenta</h3>
+              <p style={{ color: 'var(--text-muted)', marginTop: '-0.5rem' }}>Administrá tu perfil y seguridad de acceso.</p>
+           </div>
+           
+           <div className="card-glass profile-info-card" style={{ padding: '3rem', textAlign: 'center', maxWidth: '500px', margin: '0 auto' }}>
+              <div className="user-avatar-large" style={{ margin: '0 auto 1.5rem', width: '80px', height: '80px', borderRadius: '50%', background: 'var(--bg-card)', border: '3px solid var(--secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary)' }}>
+                <Shield size={40} />
+              </div>
+              <h3 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>{profileName}</h3>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Rol: <strong style={{ color: 'var(--secondary)' }}>Administrador del Sistema</strong></p>
+              
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem', marginTop: '1rem' }}>
+                <h4 style={{ marginBottom: '1.25rem', fontSize: '1.1rem' }}>Seguridad y Clave</h4>
+                {!resetSent ? (
+                  <button 
+                    className="btn-primary" 
+                    onClick={async () => {
+                      setResetLoading(true);
+                      try {
+                        await handleResetPassword();
+                        setResetSent(true);
+                      } catch (e) {
+                        alert("Error al enviar el correo.");
+                      } finally {
+                        setResetLoading(false);
+                      }
+                    }}
+                    disabled={resetLoading}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: '#fff' }}
+                  >
+                    {resetLoading ? 'Procesando...' : <><KeyRound size={18} /> Cambiar mi Contraseña de Admin</>}
+                  </button>
+                ) : (
+                  <div className="fade-in" style={{ background: 'rgba(41, 121, 255, 0.1)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--secondary)', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
+                    <MailCheck size={20} color="var(--secondary)" />
+                    <span style={{ fontSize: '0.9rem' }}>Email enviado a <strong>{userProfile?.email}</strong></span>
+                  </div>
+                )}
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1.25rem' }}>
+                  Por tu seguridad, recibirás un enlace de restablecimiento oficial directamente de Firebase en tu casilla registrada.
+                </p>
+              </div>
+           </div>
         </div>
       )}
 
@@ -725,9 +895,27 @@ const Admin = ({
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                  <button type="submit" className="btn-primary" style={{ flex: 1 }}>Guardar</button>
-                  <button type="button" className="btn-close" onClick={() => setEditingUser(null)} style={{ flex: 1 }}>Cerrar</button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className="btn-primary" style={{ flex: 1, margin: 0 }}>Guardar</button>
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={() => setEditingUser(null)} 
+                    style={{ 
+                      flex: 1, 
+                      margin: 0, 
+                      background: 'rgba(255,255,255,0.05)', 
+                      border: '1px solid var(--border)', 
+                      color: '#fff',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      fontWeight: '700',
+                      fontSize: '1.1rem',
+                      transition: '0.3s'
+                    }}
+                  >
+                    Cerrar
+                  </button>
                 </div>
               </form>
             )}

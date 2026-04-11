@@ -50,7 +50,7 @@ const weekDays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes
 function App() {
   
   // --- Estados de Autenticación y Datos de Firestore (Vía Hooks) ---
-  const { isAuthenticated, isAdmin, userProfile, points, loading } = useAuth();
+  const { isAuthenticated, isAdmin, userProfile, points, loading, handleResetPassword } = useAuth();
   const { 
     foodProductsState, 
     autoProductsState, 
@@ -278,6 +278,7 @@ function App() {
             userProfile={userProfile}
             redemptionsState={redemptionsState}
             handleCompleteRedeem={handleCompleteRedeem}
+            handleResetPassword={handleResetPassword}
           />
         )}
       </main>

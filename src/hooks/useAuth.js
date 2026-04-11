@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
 import { doc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 
@@ -88,5 +88,16 @@ export const useAuth = () => {
     };
   }, []);
 
-  return { isAuthenticated, isAdmin, userProfile, points, loading };
+  const handleResetPassword = async () => {
+    if (!userProfile?.email) return;
+    try {
+      await sendPasswordResetEmail(auth, userProfile.email);
+      return true;
+    } catch (error) {
+      console.error("Error al enviar email de reset:", error);
+      throw error;
+    }
+  };
+
+  return { isAuthenticated, isAdmin, userProfile, points, loading, handleResetPassword };
 };
